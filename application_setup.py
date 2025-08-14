@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-A Python script to set up a Google Cloud Discovery Engine environment.
+A Python script to set up a Google Cloud Discovery Engine environment. 
 
 This script performs the following actions in order:
 1.  Creates a new Discovery Engine Datastore.
@@ -14,7 +14,6 @@ This script is designed to be run from the command line and requires all configu
 parameters to be provided as arguments.
 """
 
-import argparse
 import json
 import os
 import glob
@@ -153,14 +152,20 @@ def ingest_data_from_gcs(
         for line in tqdm(lines, desc="Ingesting documents", unit="doc", file=sys.stderr):
             try:
                 data = json.loads(line)
-                physician_id = data.get("PhysicianId")
-                if not physician_id:
-                    print(f"Skipping record due to missing 'PhysicianId': {line}")
+                document_id = None
+                
+                if "SpecialtyId" in data:
+                    document_id = f'specialty_{data["SpecialtyId"]}'
+                elif "AreaofExpertiseId" in data:
+                    document_id = f'area_of_expertise_{data["AreaofExpertiseId"]}'
+                elif "PhysicianId" in data:
+                    document_id = f'physician_{data["PhysicianId"]}'
+
+                if not document_id:
+                    print(f"Skipping record due to missing ID ('SpecialtyId', 'AreaofExpertiseId', or 'PhysicianId'): {line}")
                     continue
 
-                document_id = str(physician_id)
-
-                with open(f'tmp/output_{physician_id}.json', "w") as f:
+                with open(f'tmp/output_{document_id}.json', "w") as f:
                     json.dump(data, f)
 
                 if data.get('is_deleted', '0') == '1':
@@ -277,42 +282,27 @@ def delete_local_json_files() -> None:
 
 def main():
     """Main function to run the script."""
-    parser = argparse.ArgumentParser(
-        description="Set up Google Cloud Discovery Engine Datastore and App."
-    )
-    parser.add_argument(
-        "--project_id", type=str, required=True, help="Required. Google Cloud Project ID."
-    )
-    parser.add_argument(
-        "--location", type=str, required=True, help="Required. Location for Discovery Engine resources ('global', 'eu', 'us')."
-    )
-    parser.add_argument(
-        "--datastore_name", type=str, required=True, help="Required. Unique ID for the datastore."
-    )
-    parser.add_argument(
-        "--engine_name", type=str, required=True, help="Required. Unique ID for the engine/app."
-    )
-    parser.add_argument(
-        "--gcs_bucket", type=str, required=True, help="Required. GCS bucket containing the source data."
-    )
-    parser.add_argument(
-        "--gcs_file", type=str, required=True, help="Required. Path to the JSONL file within the GCS bucket."
-    )
-    args = parser.parse_args()
+    # Configuration parameters
+    project_id = "genai-poc-403304"
+    location = "global"
+    datastore_name = "hhc-datastore-specialty-v1"
+    engine_name = "hhc-query-app-specialty-v1"
+    gcs_bucket = "hhc-bucket-dev"
+    gcs_file = "transformed-data/transformed_specialty_data.jsonl"
 
     print("--- Starting Discovery Engine Setup Script ---")
-    print(f"  Project ID: {args.project_id}")
-    print(f"  Location: {args.location}")
+    print(f"  Project ID: {project_id}")
+    print(f"  Location: {location}")
     print("-" * 45)
 
     # Step 1: Create the Datastore
     print("\n[STEP 1/4] Creating Datastore...")
     try:
         create_datastore(
-            args.project_id, args.location, args.datastore_name, args.datastore_name
+            project_id, location, datastore_name, datastore_name
         )
     except AlreadyExists:
-        print(f"Datastore '{args.datastore_name}' already exists. Skipping creation.")
+        print(f"Datastore '{datastore_name}' already exists. Skipping creation.")
     except Exception as e:
         print(f"An unexpected error occurred during datastore creation: {e}")
         return
@@ -320,16 +310,16 @@ def main():
     # Step 2: Ingest Data from GCS
     print("\n[STEP 2/4] Ingesting documents from GCS...")
     try:
-        doc_client = get_document_service_client(args.project_id, args.location)
+        doc_client = get_document_service_client(project_id, location)
         ingest_data_from_gcs(
             client=doc_client,
-            project_id=args.project_id,
-            location=args.location,
-            datastore_name=args.datastore_name,
-            gcs_bucket_name=args.gcs_bucket,
-            gcs_file_name=args.gcs_file,
+            project_id=project_id,
+            location=location,
+            datastore_name=datastore_name,
+            gcs_bucket_name=gcs_bucket,
+            gcs_file_name=gcs_file,
         )
-        print(f"Completed ingestion for file - {args.gcs_file}")
+        print(f"Completed ingestion for file - {gcs_file}")
     except Exception as e:
         print(f"An unexpected error occurred during data ingestion: {e}")
 
@@ -341,14 +331,14 @@ def main():
     print("\n[STEP 4/4] Creating Engine/App...")
     try:
         create_engine(
-            project_id=args.project_id,
-            location=args.location,
-            engine_id=args.engine_name,
-            display_name=args.engine_name,
-            data_store_ids=[args.datastore_name],
+            project_id=project_id,
+            location=location,
+            engine_id=engine_name,
+            display_name=engine_name,
+            data_store_ids=[datastore_name],
         )
     except AlreadyExists:
-        print(f"Engine '{args.engine_name}' already exists. Skipping creation.")
+        print(f"Engine '{engine_name}' already exists. Skipping creation.")
     except Exception as e:
         print(f"An unexpected error occurred during engine creation: {e}")
 

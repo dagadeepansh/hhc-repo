@@ -115,6 +115,8 @@ def main():
     
     try:
         physician_df = pd.read_json(os.path.join(data_input_path, Config.PRIMARY_SOURCE_FILE))
+        physician_df.rename(columns={'Id': 'PhysicianId'}, inplace=True)
+
     except FileNotFoundError:
         print(f"Error: {Config.PRIMARY_SOURCE_FILE} not found. Exiting.")
         exit()
@@ -131,7 +133,6 @@ def main():
         except ValueError:
             print(f"Warning: {full_path} is empty or not a valid JSON, skipping.")
     print(">>> Loading complete.")
-
     # --- 3. Process and Merge Data ---
     print("\n>>> Step 3: Processing and merging data...")
     
