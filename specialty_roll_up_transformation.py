@@ -150,6 +150,7 @@ def main():
         return
 
     # 4. Combine all data into a single list of records
+    df_specialty = df_specialty.where(pd.notnull(df_specialty), None)
     specialty_records = df_specialty.to_dict(orient='records')
     expertise_records = df_expertise.to_dict(orient='records')
     all_records = specialty_records + expertise_records
