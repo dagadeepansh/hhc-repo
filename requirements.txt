@@ -1,5 +1,10 @@
-google-cloud-storage # ==2.10.0
-Pillow # ==10.1.0
-python-dotenv # ==0.21.0
+fastapi
 functions-framework # ==3.4.0
+google-cloud-discoveryengine
+google-cloud-storage
 pandas # ==2.1.0
+Pillow # ==10.1.0
+pydantic
+python-dotenv
+python-dotenv # ==0.21.0
+uvicorn[standard]
