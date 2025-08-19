@@ -19,7 +19,7 @@ class FilterModel(BaseModel):
     Practice: Optional[str] = None
     Rating: Optional[int] = None
     specialty_rollup: Optional[List[str]] = None
-    
+
 class RecommendationModel(BaseModel):
     id: int
     reason:str

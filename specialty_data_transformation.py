@@ -38,7 +38,9 @@ def download_bucket_with_transfer_manager(
         if isinstance(result, Exception):
             print(f"Failed to download {name} due to exception: {result}")
         else:
-            print(f"Downloaded {name} to {os.path.join(destination_directory, os.path.basename(name))}.")
+            # FIX: The log message now correctly reflects the full destination path.
+            # transfer_manager preserves the blob's path within the destination directory.
+            print(f"Downloaded {name} to {os.path.join(destination_directory, name)}.")
 
 def merge_data_with_pandas(specialty_file, symptom_file, synonym_file):
     """
@@ -123,7 +125,7 @@ def main():
     """
     # Define hardcoded values here
     bucket_name = "hhc-bucket-dev"
-    download_prefix = "physician-data"
+    download_prefix = "specialty-data/" # Added a trailing slash for clarity
     data_dir = "data/"
     specialty_filename = "HartfordHealthCare_Specialty.json"
     symptom_filename = "HartfordHealthCare_Symptom.json"
@@ -134,8 +136,10 @@ def main():
     upload_prefix = "transformed-data/"
 
     # Construct full file paths
+    # This path is where the files will be located after download.
     download_dir = os.path.join(data_dir, download_prefix)
     os.makedirs(download_dir, exist_ok=True)
+    
     specialty_path = os.path.join(download_dir, specialty_filename)
     symptom_path = os.path.join(download_dir, symptom_filename)
     synonym_path = os.path.join(download_dir, synonym_filename)
@@ -143,8 +147,10 @@ def main():
     output_path = os.path.join(output_directory, output_filename)
 
     # Convert and save
+    # FIX: Pass the parent directory 'data_dir' as the destination.
+    # The transfer manager will create the 'specialty-data' subdirectory inside it.
     download_bucket_with_transfer_manager(
-        bucket_name, download_prefix, destination_directory=download_dir
+        bucket_name, download_prefix, destination_directory=data_dir
     )
     
     df = merge_data_with_pandas(specialty_path, symptom_path, synonym_path)
