@@ -147,8 +147,6 @@ def main():
     output_path = os.path.join(output_directory, output_filename)
 
     # Convert and save
-    # FIX: Pass the parent directory 'data_dir' as the destination.
-    # The transfer manager will create the 'specialty-data' subdirectory inside it.
     download_bucket_with_transfer_manager(
         bucket_name, download_prefix, destination_directory=data_dir
     )
