@@ -234,6 +234,8 @@ def transform_data_to_jsonl(raw_data: Dict[str, Any]) -> str:
         lambda x: x if isinstance(x, list) else [])
     df_final['SynonymText'] = df_final['SynonymText'].apply(
         lambda x: x if isinstance(x, list) else [])
+    
+    df_final.fillna(None, inplace=True)
 
     records = []
 
